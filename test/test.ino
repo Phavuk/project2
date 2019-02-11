@@ -26,17 +26,18 @@ void setup() {
           delay(1000);
       }
 
-    WiFiMulti.addAP("SOS-1N1", "globallogic54");
+    WiFiMulti.addAP("MI", "heslo123456789");
 
     while(WiFiMulti.run() != WL_CONNECTED) {
         
         delay(100);
     }
 
-    webSocket.begin("192.168.2.105", 5485, "/socket.io/?transport=websocket");
-    
+    webSocket.begin("192.168.1.109", 5485, "/socket.io/?transport=websocket");
+}
 
-    const size_t capacity = JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(4);
+void json() {
+  const size_t capacity = JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(4);
     DynamicJsonBuffer jsonBuffer(capacity);
     
     JsonObject& root = jsonBuffer.createObject();
@@ -52,15 +53,16 @@ void setup() {
     info["watersurface"] = "10";
     JsonObject& date = root.createNestedObject("date");
     date["date"] = "2019.12.25 14:17:54";
-    
-    root.printTo(Serial);
 
+    root.printTo(Serial);
+    
     char output[capacity];
     root.printTo(output);
-    
     webSocket.emit("arduinoData", output);
 }
 
 void loop() {
     webSocket.loop();
+    delay(1000);
+    json();
 }
