@@ -7,6 +7,8 @@
 #define USE_SERIAL Serial
 #define interval 15000
 
+#define waterSurface A0
+
 unsigned long previousMillis = 0;
 
 SocketIoClient webSocket;
@@ -27,7 +29,8 @@ void setup() {
           USE_SERIAL.flush();
           delay(1000);
       }
-      
+
+    //Connection to WIFI   
     const char* ssid     = "MI";
     const char* password = "heslo123456789";
     
@@ -39,19 +42,22 @@ void setup() {
       delay(500);
       Serial.print(".");
     }
-    
+
     Serial.println("");
     Serial.println("WiFi connected.");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
-    
+
+    //establish time client
     timeClient.begin();
     timeClient.setTimeOffset(3600);
-    
+
+    //establish socketIO connection
     webSocket.begin("192.168.1.109", 5485, "/socket.io/?transport=websocket");
     webSocket.on("pourFlower", pourFlower);
 }
 
+//function for WIFI reconection
 void wifiConection() {
  const char* ssid     = "MI";
  const char* password = "heslo123456789";
@@ -74,8 +80,19 @@ void wifiConection() {
   }
 }
 
-void pourFlower(const char * payload, size_t length) {
-  USE_SERIAL.println("Data prijate");
+////////////////////////////////////////// MEASURE DATA ////////////////////////////////////////////
+void measureData() {
+  String id = "kgj45as";
+  float temperature = 50; 
+  float humidityAir = 25.5;
+  float humiditySoil = 65.5;
+  float waterSurface = getWaterSurface();
+
+  createJson(temperature, humidityAir, humiditySoil, waterSurface, id);
+}
+
+float getWaterSurface() {
+  return analogRead(waterSurface);
 }
 
 String getDate() {
@@ -92,23 +109,16 @@ String getDate() {
   return date;
 }
 
-void measureData() {
-  float temperature = 50; 
-  float humidityAir = 25.5;
-  float humiditySoil = 65.5;
-  float waterSurface = 86.653;
+//////////////////////////////////////// JSON Creation /////////////////////////////////////////////////
 
-  createJson(temperature, humidityAir, humiditySoil, waterSurface);
-}
-
-void createJson(float temperature, float humidityAir, float humiditySoil, float waterSurface) {
+void createJson(float temperature, float humidityAir, float humiditySoil, float waterSurface, String id) {
     const size_t capacity = JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(4);
     DynamicJsonBuffer jsonBuffer(capacity);
     
     JsonObject& root = jsonBuffer.createObject();
     
     JsonObject& identification = root.createNestedObject("identification");
-    identification["id"] = "kgj45as";
+    identification["id"] = id;
     
     JsonObject& info = root.createNestedObject("info");
     info["temperature"] = temperature;
@@ -126,11 +136,18 @@ void createJson(float temperature, float humidityAir, float humiditySoil, float 
     sendData(output);
 }
 
+//////////////////////////////////////////// SOCKETIO EVENTS //////////////////////////////////
+
 void sendData(char* output) {
     webSocket.emit("arduinoData", output);
     USE_SERIAL.println("Data sended.");
 }
 
+void pourFlower(const char * payload, size_t length) {
+  USE_SERIAL.println("Data prijate");
+}
+
+/////////////////////////////////////////////// LOOP ///////////////////////////////////////////
 void loop() {
     webSocket.loop();
     wifiConection();
