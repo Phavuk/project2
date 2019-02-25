@@ -94,6 +94,8 @@ void wifiConection() {
       
       webSocket.begin("192.168.1.109", 5485, "/socket.io/?transport=websocket");
       webSocket.on("pourFlower", pourFlower);
+      webSocket.on("disconnect", disconection);
+      webSocket.on("connect", conection);
     }
   }
 }
