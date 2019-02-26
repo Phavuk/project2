@@ -58,7 +58,6 @@ void setup() {
     Serial.println(WiFi.localIP());
     
     //setup OTA
-    ArduinoOTA.setHostname("ESP 32");
     arduinoOTA();
 
     //establish time client
